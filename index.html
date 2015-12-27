@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+		<script src="chess_app.js"></script>
+		<script>
+			function allowDrop(ev,obj) 
+			{
+				if(true)
+					ev.preventDefault();
+			}
+
+			function drag(ev) 
+			{
+			    ev.dataTransfer.setData("text", ev.target.id);
+			}
+
+			function drop(ev,square) 
+			{
+				angular.element($('#main')).scope().drop(ev,square);
+			}
+		</script>
+		<link rel="stylesheet" type="text/css" href="style.css">
+	</head>
+	<body ng-app="chessApp">
+		<div id="main" ng-controller="chessAppController">
+			<h1>Chess</h1>
+			<button ng-click="undo()">Undo</button>
+			<button ng-click="makeHTTPCall()">Test HTTP Shit</button>
+			<br/><br/>
+			<div style="display:inline-block; border:1px solid black;">
+				<div ng-repeat="i in [8,7,6,5,4,3,2,1]" style="clear:both;">
+					<div ng-repeat="j in [8,7,6,5,4,3,2,1]" ng-class="{'dark':isEven(i+j), 'light':!isEven(j+i), 'endl':isLastCol(j)}" 
+						class="square" style="color:blue;" id="{{toLetter(j)+i}}" ondrop="drop(event,this)" ondragover="allowDrop(event,this)" ng-click="hasPiece($event);">
+						<!-- <span>{{toLetter(j)+i}}</span> -->
+						<img ng-if="i==2" id="{{'pawn-'+toLetter(j)+i}}" color="white" class="piece_small" src="images/white_pawn.png" draggable="true" ondragstart="drag(event)"/>
+						<img ng-if="i==7" id="{{'pawn-'+toLetter(j)+i}}" color="black" class="piece_small" src="images/black_pawn.png" draggable="false" ondragstart="drag(event)"/>
+						<img ng-if="i==1&&(j==3 || j==6)" id="{{'bishop-'+toLetter(j)+i}}" color="white" class="piece" src="images/white_bishop.png" draggable="true" ondragstart="drag(event)"/>
+						<img ng-if="i==8&&(j==3 || j==6)" id="{{'bishop-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_bishop.png" draggable="false" ondragstart="drag(event)"/>
+						<img ng-if="i==1&&(j==2 || j==7)" id="{{'knight-'+toLetter(j)+i}}" color="white" class="piece" src="images/white_knight.png" draggable="true" ondragstart="drag(event)"/>
+						<img ng-if="i==8&&(j==2 || j==7)" id="{{'knight-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_knight.png" draggable="false" ondragstart="drag(event)"/>
+						<img ng-if="i==1&&(j==1 || j==8)" id="{{'rook-'+toLetter(j)+i}}" color="white" class="piece" src="images/white_rook.png" draggable="true" ondragstart="drag(event)"/>
+						<img ng-if="i==8&&(j==1 || j==8)" id="{{'rook-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_rook.png" draggable="false" ondragstart="drag(event)"/>
+						<img ng-if="i==1&&j==4" id="{{'queen-'+toLetter(j)+i}}" color="white" class="piece" src="images/white_queen.png" draggable="true" ondragstart="drag(event)"/>
+						<img ng-if="i==8&&j==4" id="{{'queen-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_queen.png" draggable="false" ondragstart="drag(event)"/>
+						<img ng-if="i==1&&j==5" id="{{'king-'+toLetter(j)+i}}" color="white" class="piece" src="images/white_king.png" draggable="true" ondragstart="drag(event)"/>
+						<img ng-if="i==8&&j==5" id="{{'king-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_king.png" draggable="false" ondragstart="drag(event)"/>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
