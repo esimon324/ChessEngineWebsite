@@ -24,11 +24,13 @@ angular.module('chessApp', []).controller('chessAppController',
 			ev.preventDefault();
 		    var data = ev.dataTransfer.getData("text");
 		    var piece = document.getElementById(data);
-		    var move = piece.parentElement.id + "" + square.id;
 		    var captured = square.children[0];
+		    var to = square.id;
+		    var from = piece.parentElement.id;
+		    var notation = $scope.toNotation(piece,square,captured);
 		    if(captured != null)
 		    	square.removeChild(captured);
-			$scope.push_move(move,piece,captured);
+			$scope.push_move(piece,captured,notation,to,from);
 			square.appendChild(piece);
 			if($scope.isWhiteTurn)
 				$scope.setTurn('black');
@@ -40,11 +42,9 @@ angular.module('chessApp', []).controller('chessAppController',
 			if($scope.moves.length > 0)
 			{
 				var lastMove = $scope.moves.pop();
-				var from = lastMove.notation.substring(0,2);
-				var to = lastMove.notation.substring(2,4);
-				document.getElementById(from).appendChild(lastMove.moved);
+				document.getElementById(lastMove.from).appendChild(lastMove.moved);
 				if(lastMove.captured != null)
-					document.getElementById(to).appendChild(lastMove.captured);
+					document.getElementById(lastMove.to).appendChild(lastMove.captured);
 				if($scope.isWhiteTurn)
 					$scope.setTurn('black');
 				else
@@ -60,10 +60,11 @@ angular.module('chessApp', []).controller('chessAppController',
 		{
 			return (n%8)==0;
 		};
-		$scope.push_move = function(notation,moved,captured)
+		$scope.push_move = function(moved,captured,notation,to,from)
 		{
-			var move = {notation:notation, moved:moved, captured:captured};
+			var move = {notation:notation, moved:moved, captured:captured, to:to, from:from};
 			$scope.moves.push(move);
+			$scope.$apply();
 			console.log($scope.moves);
 			$scope.isWhiteTurn
 		};
@@ -100,7 +101,46 @@ angular.module('chessApp', []).controller('chessAppController',
 		}
 		$scope.makeHTTPCall = function()
 		{
-			$http.post('sftp://emsimon@elnux1.cs.umass.edu/nfs/elsrv4/users1/grad/emsimon/echoserver.py', 'TESTING');
+			//$http.post('sftp://emsimon@elnux1.cs.umass.edu/nfs/elsrv4/users1/grad/emsimon/echoserver.py', 'TESTING');
+			$.ajax({
+			  type: "GET",
+			  url: "http://emsimon@elnux1.cs.umass.edu/nfs/elsrv4/users1/grad/emsimon/public_html/ChessEngineWebsite/echoserver.py",
+			  data: {param: 'TESTING'}
+			}).done(function(result) {
+			   console.log(result);
+			});
+		};
+
+		//takes the piece and the square and forms the correct chess notation for the move
+		$scope.toNotation = function(piece,square,captured)
+		{
+			var result = "";
+			var piece_name = piece.id.substring(0,piece.id.indexOf("-"));
+			if(piece_name == "bishop")
+				result += "B";
+			else if(piece_name == "knight")
+				result += "N";
+			else if(piece_name == "rook")
+				result += "R";
+			else if(piece_name == "queen")
+				result += "Q";
+			else if(piece_name == "king")
+				result += "K";
+
+			if(captured !== undefined && captured != null)
+				result += "x"
+
+			result += square.id;
+
+			return result;
+		};
+
+		$scope.displayTurn = function(index)
+		{
+			if(index % 2 == 0)
+				return ((index/2)+1)+". ";
+			else
+				return "";
 		};
 	}
 );
