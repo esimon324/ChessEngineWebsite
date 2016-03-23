@@ -19,24 +19,6 @@ angular.module('chessApp', []).controller('chessAppController',
 				console.log("It's now black's turn");
 			}
 		}
-		$scope.drop = function(ev,square)
-		{
-			ev.preventDefault();
-		    var data = ev.dataTransfer.getData("text");
-		    var piece = document.getElementById(data);
-		    var captured = square.children[0];
-		    var to = square.id;
-		    var from = piece.parentElement.id;
-		    var notation = $scope.toNotation(piece,square,captured);
-		    if(captured != null)
-		    	square.removeChild(captured);
-			$scope.push_move(piece,captured,notation,to,from);
-			square.appendChild(piece);
-			if($scope.isWhiteTurn)
-				$scope.setTurn('black');
-			else
-				$scope.setTurn('white');
-		};
 		$scope.undo = function()
 		{
 			if($scope.moves.length > 0)
@@ -112,25 +94,31 @@ angular.module('chessApp', []).controller('chessAppController',
 		};
 
 		//takes the piece and the square and forms the correct chess notation for the move
-		$scope.toNotation = function(piece,square,captured)
+		$scope.toNotation = function(piece,to,from,captured)
 		{
 			var result = "";
-			var piece_name = piece.id.substring(0,piece.id.indexOf("-"));
-			if(piece_name == "bishop")
+			var pieceName = piece.id.substring(0,piece.id.indexOf("-"));
+			if(pieceName == "bishop")
 				result += "B";
-			else if(piece_name == "knight")
+			else if(pieceName == "knight")
 				result += "N";
-			else if(piece_name == "rook")
+			else if(pieceName == "rook")
 				result += "R";
-			else if(piece_name == "queen")
+			else if(pieceName == "queen")
 				result += "Q";
-			else if(piece_name == "king")
+			else if(pieceName == "king")
 				result += "K";
 
 			if(captured !== undefined && captured != null)
+			{
+				if(pieceName == "pawn")
+				{
+					result += from.substring(0,1);
+				}
 				result += "x"
+			}
 
-			result += square.id;
+			result += to;
 
 			return result;
 		};
@@ -142,5 +130,52 @@ angular.module('chessApp', []).controller('chessAppController',
 			else
 				return "";
 		};
+
+		$scope.handleDrop = function(ev,square)
+		{
+			console.log("still this: ", square);
+		    var piece = document.getElementById(ev.dataTransfer.getData("text"));
+		    var captured = square.children[0];
+		    var to = square.id;
+		    var from = piece.parentElement.id;
+		    console.log("square: ", square.getAttribute("id"));
+		    var notation = $scope.toNotation(piece,to,from,captured);
+		    if(captured != null)
+		    	square.removeChild(captured);
+			$scope.push_move(piece,captured,notation,to,from);
+			square.appendChild(piece);
+			if($scope.isWhiteTurn)
+				$scope.setTurn('black');
+			else
+				$scope.setTurn('white');
+		};
+	}
+).directive('moveable', 
+	function($document){
+  		return function(scope, element, attr){
+	    	var startX = 0, startY = 0, x = 0, y = 0;
+	    	element.css({
+			    position: 'relative',
+			   	cursor: 'pointer',
+			   	display: 'block'
+		    });
+		    element.on('dragstart', function(event){
+		  		event.dataTransfer.effectAllowed = 'move';
+				event.dataTransfer.setData("text", event.target.id);
+		    });
+		};
+	}
+).directive('droppable',
+	function($document){
+		return function(scope,element,attr){
+			element.on('dragover',function(event)
+			{
+				if(event.preventDefault)
+					event.preventDefault();
+			});
+			element.on('drop', function(event){
+				scope.handleDrop(event,this);
+		    });
+		}
 	}
 );
