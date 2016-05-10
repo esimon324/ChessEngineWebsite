@@ -17,24 +17,34 @@
 			<button ng-click="makeHTTPCall()">Test HTTP</button>
 			<br/><br/>
 			<div class="col-md-offset-2 col-md-8 col-xs-12">
-				<div class="board">
-					<div ng-repeat="i in [8,7,6,5,4,3,2,1]" style="clear:both;">
+				<div class="board" style="height:400px;">
+					<div ng-repeat="i in [8,7,6,5,4,3,2,1]" style="border:2px solid red; position:relative; display:table-row;">
+						<span class="rank-number">{{i}}</span>
 						<div ng-repeat="j in [8,7,6,5,4,3,2,1]" ng-class="{'dark':isEven(i+j), 'light':!isEven(j+i), 'endl':isLastCol(j)}" 
-							class="square" style="color:blue;" id="{{toLetter(j)+i}}" droppable>
-							<!-- <span>{{toLetter(j)+i}}</span> -->
-							<img ng-if="i==2" id="{{'pawn-'+toLetter(j)+i}}" color="white" class="piece_small" src="images/white_pawn.png" moveable/>
-							<img ng-if="i==7" id="{{'pawn-'+toLetter(j)+i}}" color="black" class="piece_small" src="images/black_pawn.png" moveable/>
+							class="square" id="{{toLetter(j)+i}}" droppable>
+							<img ng-if="i==2" id="{{'pawn-'+toLetter(j)+i}}" color="white" class="pawn" src="images/white_pawn.png" moveable/>
+							<img ng-if="i==7" id="{{'pawn-'+toLetter(j)+i}}" color="black" class="pawn" src="images/black_pawn.png" draggable="false" moveable/>
 							<img ng-if="i==1&&(j==3 || j==6)" id="{{'bishop-'+toLetter(j)+i}}" color="white" class="piece" src="images/white_bishop.png" moveable/>
-							<img ng-if="i==8&&(j==3 || j==6)" id="{{'bishop-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_bishop.png" moveable/>
+							<img ng-if="i==8&&(j==3 || j==6)" id="{{'bishop-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_bishop.png" draggable="false" moveable/>
 							<img ng-if="i==1&&(j==2 || j==7)" id="{{'knight-'+toLetter(j)+i}}" color="white" class="piece" src="images/white_knight.png" moveable/>
-							<img ng-if="i==8&&(j==2 || j==7)" id="{{'knight-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_knight.png" moveable/>
+							<img ng-if="i==8&&(j==2 || j==7)" id="{{'knight-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_knight.png" draggable="false" moveable/>
 							<img ng-if="i==1&&(j==1 || j==8)" id="{{'rook-'+toLetter(j)+i}}" color="white" class="piece" src="images/white_rook.png" moveable/>
-							<img ng-if="i==8&&(j==1 || j==8)" id="{{'rook-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_rook.png" moveable/>
+							<img ng-if="i==8&&(j==1 || j==8)" id="{{'rook-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_rook.png" draggable="false" moveable/>
 							<img ng-if="i==1&&j==4" id="{{'queen-'+toLetter(j)+i}}" color="white" class="piece" src="images/white_queen.png" moveable/>
-							<img ng-if="i==8&&j==4" id="{{'queen-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_queen.png" moveable/>
+							<img ng-if="i==8&&j==4" id="{{'queen-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_queen.png" draggable="false" moveable/>
 							<img ng-if="i==1&&j==5" id="{{'king-'+toLetter(j)+i}}" color="white" class="piece" src="images/white_king.png" moveable/>
-							<img ng-if="i==8&&j==5" id="{{'king-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_king.png" moveable/>
+							<img ng-if="i==8&&j==5" id="{{'king-'+toLetter(j)+i}}" color="black" class="piece" src="images/black_king.png" draggable="false" moveable/>
 						</div>
+					</div>
+					<div>
+						<div class="square"><span>a</span></div>
+						<div class="square"><span>b</span></div>
+						<div class="square"><span>c</span></div>
+						<div class="square"><span>d</span></div>
+						<div class="square"><span>e</span></div>
+						<div class="square"><span>f</span></div>
+						<div class="square"><span>g</span></div>
+						<div class="square"><span>h</span></div>
 					</div>
 				</div>
 				<table>

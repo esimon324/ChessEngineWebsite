@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+		<!-- Latest compiled and minified JavaScript -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+		<script src="chess_app.js"></script>
+		<link rel="stylesheet" type="text/css" href="style_table.css">
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	</head>
+	<body ng-app="chessApp">
+		<div id="main" ng-controller="chessAppController">
+			<h1>Chess</h1>
+			<button ng-click="undo()">Undo</button>
+			<button ng-click="makeHTTPCall()">Test HTTP</button>
+			<br/><br/>
+			<div class="col-md-offset-2 col-md-8 col-xs-12" style="margin-top:10px;">
+				<div class="board">
+					<table style="height:500px;">
+						<tr id="rank-8">
+							<td>8</td>
+							<td id="a8" class="sq light">
+								<img id="rook-a8" color="black" class="piece" src="images/black_rook.png" moveable/>
+							</td>
+							<td id="b8" class="sq dark">
+								<img id="knight-b8" color="black" class="piece" src="images/black_knight.png" moveable/>
+							</td>
+							<td id="c8" class="sq light">
+								<img id="bishop-c8" color="black" class="piece" src="images/black_bishop.png" moveable/>
+							</td>
+							<td id="d8" class="sq dark">
+								<img id="queen-d8" color="black" class="piece" src="images/black_queen.png" moveable/>
+							</td>
+							<td id="e8" class="sq light">
+								<img id="king-e8" color="black" class="piece" src="images/black_king.png" moveable/>
+							</td>
+							<td id="f8" class="sq dark">
+								<img id="bishop-f8" color="black" class="piece" src="images/black_bishop.png" moveable/>
+							</td>
+							<td id="g8" class="sq light">
+								<img id="knight-g8" color="black" class="piece" src="images/black_knight.png" moveable/>	
+							</td>
+							<td id="h8" class="sq dark">
+								<img id="rook-h8" color="black" class="piece" src="images/black_rook.png" moveable/>
+							</td>
+						</tr>
+						<tr id="rank-7">
+							<td>7</td>
+							<td ng-repeat="i in ['a','b','c','d','e','f','g','h']" class="sq" ng-class="'dark':isEven(i+j), 'light':!isEven(j+i)">
+								<img id="{{'pawn-'+i+7}}" color="black" class="piece" src="images/black_pawn.png" moveable/>
+							</td>
+						</tr>
+						<tr ng-repeat="i in [6,5,4,3]">
+							<td>{{i}}</td>
+							<td ng-repeat="j in ['a','b','c','d','e','f','g','h']" class="sq" droppable></td>
+						</tr>
+						<tr id="rank-2">
+							<td>2</td>
+							<td ng-repeat="i in ['a','b','c','d','e','f','g','h']" class="sq">
+								<img id="{{'pawn-'+i+2}}" color="white" class="piece" src="images/white_pawn.png" moveable/>
+							</td>
+						</tr>
+						<tr id="rank-1">
+							<td>1</td>
+							<td id="a1" class="sq">
+								<img id="rook-a1" color="white" class="piece" src="images/white_rook.png" moveable/>
+							</td>
+							<td id="b1" class="sq">
+								<img id="knight-b1" color="white" class="piece" src="images/white_knight.png" moveable/>
+							</td>
+							<td id="c1" class="sq">
+								<img id="bishop-c1" color="white" class="piece" src="images/white_bishop.png" moveable/>
+							</td>
+							<td id="d1" class="sq">
+								<img id="queen-d1" color="white" class="piece" src="images/white_queen.png" moveable/>
+							</td>
+							<td id="e1" class="sq">
+								<img id="king-e1" color="white" class="piece" src="images/white_king.png" moveable/>
+							</td>
+							<td id="f1" class="sq">
+								<img id="bishop-f1" color="white" class="piece" src="images/white_bishop.png" moveable/>
+							</td>
+							<td id="g1" class="sq">
+								<img id="knight-g1" color="white" class="piece" src="images/white_knight.png" moveable/>	
+							</td>
+							<td id="h1" class="sq">
+								<img id="rook-h1" color="white" class="piece" src="images/white_rook.png" moveable/>
+							</td>
+						</tr>
+					</table>
+				</div>
+				<table>
+					<tr ng-repeat="move in moves track by $index">
+						<td style="width:1%; padding-left:5px;">
+							{{displayTurn($index)}} 
+						</td>
+						<td>
+							{{move.notation}}
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</body>
+</html>

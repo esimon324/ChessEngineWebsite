@@ -6,4 +6,8 @@
 .white_queen{content:url('images/white_queen.png');}
 .piece{position:relative; top:10%; left:12%; height:80%; width:75%;}
 .pawn{position:relative; top:10%; left:20%; height:80%; width:60%;}
-.rank-number{display:block; float:left; margin-top:4%; margin-right:5px;}
+.sq{display:grid;}
+.sq > .piece{height:20%; width:20%;}
+.sq > .pawn{height:20%; width:20%;}
+.sq .dark{background-color:#522F2F;}
+.sq .light{background-color:#D2B48C;}

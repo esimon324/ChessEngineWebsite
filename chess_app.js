@@ -1,7 +1,7 @@
 angular.module('chessApp', []).controller('chessAppController', 
 	function($scope,$http) {
-		$scope.isWhiteTurn = true;
 		$scope.moves = new Array();
+		$scope.isWhiteTurn;
 		$scope.setTurn = function(color)
 		{
 			if(color=='white')
@@ -133,22 +133,25 @@ angular.module('chessApp', []).controller('chessAppController',
 
 		$scope.handleDrop = function(ev,square)
 		{
-			console.log("still this: ", square);
 		    var piece = document.getElementById(ev.dataTransfer.getData("text"));
 		    var captured = square.children[0];
 		    var to = square.id;
 		    var from = piece.parentElement.id;
-		    console.log("square: ", square.getAttribute("id"));
-		    var notation = $scope.toNotation(piece,to,from,captured);
-		    if(captured != null)
-		    	square.removeChild(captured);
-			$scope.push_move(piece,captured,notation,to,from);
-			square.appendChild(piece);
-			if($scope.isWhiteTurn)
-				$scope.setTurn('black');
-			else
-				$scope.setTurn('white');
+		    if(to != from)
+		    {
+			    var notation = $scope.toNotation(piece,to,from,captured);
+			    if(captured != null)
+			    	square.removeChild(captured);
+				$scope.push_move(piece,captured,notation,to,from);
+				square.appendChild(piece);
+				if($scope.isWhiteTurn)
+					$scope.setTurn('black');
+				else
+					$scope.setTurn('white');
+			}
 		};
+
+		$scope.setTurn('white');
 	}
 ).directive('moveable', 
 	function($document){
