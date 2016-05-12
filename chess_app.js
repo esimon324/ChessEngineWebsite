@@ -1,7 +1,9 @@
-angular.module('chessApp', []).controller('chessAppController', 
+var chessApp = angular.module('chessApp', []).controller('chessAppController', 
 	function($scope,$http) {
 		$scope.moves = new Array();
 		$scope.isWhiteTurn;
+		$scope.t = 2;
+		$scope.r = '';
 		$scope.setTurn = function(color)
 		{
 			if(color=='white')
@@ -69,6 +71,7 @@ angular.module('chessApp', []).controller('chessAppController',
 			else
 				return 'h';
 		};
+		
 		$scope.hasPiece = function(event)
 		{
 			var square = event.target;
@@ -81,17 +84,6 @@ angular.module('chessApp', []).controller('chessAppController',
 			event.stopPropagation();
 			return -1;
 		}
-		$scope.makeHTTPCall = function()
-		{
-			//$http.post('sftp://emsimon@elnux1.cs.umass.edu/nfs/elsrv4/users1/grad/emsimon/echoserver.py', 'TESTING');
-			$.ajax({
-			  type: "GET",
-			  url: "http://emsimon@elnux1.cs.umass.edu/nfs/elsrv4/users1/grad/emsimon/public_html/ChessEngineWebsite/echoserver.py",
-			  data: {param: 'TESTING'}
-			}).done(function(result) {
-			   console.log(result);
-			});
-		};
 
 		//takes the piece and the square and forms the correct chess notation for the move
 		$scope.toNotation = function(piece,to,from,captured)
@@ -150,6 +142,23 @@ angular.module('chessApp', []).controller('chessAppController',
 					$scope.setTurn('white');
 			}
 		};
+		
+		$scope.testHttp = function()
+		{
+			var url = 'http://127.0.0.1:5000/';
+			url = url + $scope.t;
+			// Simple GET request example:
+			$http({
+			  method: 'GET',
+			  url: url
+			}).then(function successCallback(response) {
+				console.log(response.data);
+				$scope.r = response.data;
+			  }, function errorCallback(response) {
+				console.log('ERROR');
+				console.log(response);
+			  });
+		}
 
 		$scope.setTurn('white');
 	}
@@ -182,3 +191,8 @@ angular.module('chessApp', []).controller('chessAppController',
 		}
 	}
 );
+
+chessApp.config(['$httpProvider',function ($httpProvider) {
+	$httpProvider.defaults.headers.common['Access-Control-Allow-Headers'] = '*';
+    //delete $httpProvider.defaults.headers.common['X-Requested-With'];
+}]);
