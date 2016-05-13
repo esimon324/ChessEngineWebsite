@@ -4,6 +4,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 		$scope.isWhiteTurn;
 		$scope.t = 2;
 		$scope.r = '';
+		$scope.legalMoves
 		$scope.setTurn = function(color)
 		{
 			if(color=='white')
@@ -159,6 +160,22 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 				console.log(response);
 			  });
 		}
+		
+		$scope.getLegalMoves = function()
+		{
+			var url = 'http://127.0.0.1:5000/legal_moves';
+			$http({
+			  method: 'GET',
+			  url: url
+			}).then(function successCallback(response) {
+				console.log(response.data);
+				$scope.legalMoves = response.data;
+			  }, function errorCallback(response) {
+				console.log('ERROR');
+				console.log(response);
+			  });
+		}
+		
 
 		$scope.setTurn('white');
 	}

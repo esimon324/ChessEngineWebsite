@@ -60,6 +60,10 @@
 					</tr>
 				</table>
 			</div>
+			<button ng-click="getLegalMoves()">Legal Moves?</button>
+			<ol>
+				<li ng-repeat="m in legalMoves track by $index">{{m}}</li>
+			</ol>
 		</div>
 	</body>
 </html>
