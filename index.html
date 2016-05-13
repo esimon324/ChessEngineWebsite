@@ -13,13 +13,9 @@
 	<body ng-app="chessApp">
 		<div id="main" ng-controller="chessAppController">
 			<h1>Chess</h1>
-			<button ng-click="undo()">Undo</button>
-			<button ng-click="testHttp()">Test HTTP</button>
-			<input type="text" ng-model="t"></input>
-			<br/><br/>
-			<span>{{r}}</span>
 			<div class="col-md-offset-2 col-md-8 col-xs-12">
 				<div class="board" style="height:400px;">
+					<button ng-click="undo()">Undo</button>
 					<div ng-repeat="i in [8,7,6,5,4,3,2,1]" style="border:2px solid red; position:relative; display:table-row;">
 						<span class="rank-number">{{i}}</span>
 						<div ng-repeat="j in [8,7,6,5,4,3,2,1]" ng-class="{'dark':isEven(i+j), 'light':!isEven(j+i), 'endl':isLastCol(j)}" 
@@ -60,7 +56,6 @@
 					</tr>
 				</table>
 			</div>
-			<button ng-click="getLegalMoves()">Legal Moves?</button>
 			<ol>
 				<li ng-repeat="m in legalMoves track by $index">{{m}}</li>
 			</ol>
