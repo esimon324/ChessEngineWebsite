@@ -30,6 +30,14 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			}
 		};
 		
+		$scope.switchTurn = function()
+		{
+			if($scope.isWhiteTurn)
+				$scope.setTurn('black');
+			else
+				$scope.setTurn('white');
+		};
+		
 		$scope.undo = function()
 		{
 			var url = $scope.rootURL + 'undo';
@@ -43,9 +51,9 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 					var lastMove = $scope.moves.pop();
 					console.log(lastMove)
 					if(lastMove.wksc)
-					{
-						$scope.undoWhiteKingsideCastleMove()
-					}
+						$scope.undoWhiteKingsideCastle();
+					else if(lastMove.wqsc)
+						$scope.undoWhiteQueensideCastle();
 					else
 					{
 						document.getElementById(lastMove.from).appendChild(lastMove.moved);
@@ -150,15 +158,15 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 				{						
 					/*handle castling*/
 					if($scope.legalMoves.kingside && uci == 'e1g1')
-						$scope.makeWhiteKingsideCastleMove(piece,captured,to,from);
+						$scope.makeWhiteKingsideCastle();
 					else if($scope.legalMoves.queenside && uci == 'e1c1')
-						console.log('WHITE QUEENSIDE CASTLE YALL');
+						$scope.makeWhiteQueensideCastle();
 					else if($scope.legalMoves.kingside && uci == 'e8g8')
 						console.log('BLACK KINGSIDE CASTLE YALL');
 					else if($scope.legalMoves.queenside && uci == 'e8c8')
 						console.log('BLACK QUEENSIDE CASTLE YALL');
 					else
-						$scope.makeMove(square,piece,captured,from,to,false);
+						$scope.makeMove(square,piece,captured,from,to,false,false);
 				}, function errorCallback(response) 
 				{
 					console.log('ERROR');
@@ -167,75 +175,106 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			}
 		};
 		
-		//handles all functionality for making a move
-		$scope.makeMove = function(square,moved,captured,from,to,wksc)
+		//handles all functionality for making a standard move
+		$scope.makeMove = function(square,moved,captured,from,to,wksc,wqsc)
 		{
 			//move the pieces
-			if(captured != null)
-				square.removeChild(captured);
-			square.appendChild(moved);
+			$scope.movePiece(moved,square);
 			
-			//creating the notation
+			//push move onto the stack
 			var notation = $scope.toNotation(moved,to,from,captured);
-			
-			//pushing move onto the stack
-			var move = {notation:notation, moved:moved, captured:captured, to:to, from:from, wksc:wksc};
-			$scope.moves.push(move);
+			$scope.pushMove(moved,captured,from,to,notation,wksc,wqsc);
 			
 			//change the turn
-			if($scope.isWhiteTurn)
-				$scope.setTurn('black');
-			else
-				$scope.setTurn('white');
+			$scope.switchTurn();
 			
 			//update new set of legal moves
 			$scope.getLegalMoves();
 		};
 		
-		$scope.makeWhiteKingsideCastleMove = function(moved,captured,to,from)
+		//moves piece to given square
+		$scope.movePiece = function(piece,to)
 		{
+			var captured = to.children[0];
+			if(captured != null)
+				to.removeChild(captured);
+			to.appendChild(piece);
+		};
+		
+		$scope.pushMove = function(moved,captured,from,to,notation,wksc,wqsc)
+		{
+			var move = {notation:notation, moved:moved, captured:captured, to:to, from:from, wksc:wksc, wqsc:wqsc};
+			$scope.moves.push(move);
+		};
+				
+		$scope.makeWhiteKingsideCastle = function(moved,captured,to,from)
+		{
+			//move king
 			var king = document.getElementById('king-e1');
-			var kingFrom = document.getElementById('e1');
 			var kingTo = document.getElementById('g1');
-			kingFrom.removeChild(king);
-			kingTo.appendChild(king);
+			$scope.movePiece(king,kingTo);
 			
+			//move rook
 			var rook = document.getElementById('rook-h1');
-			var rookFrom = document.getElementById('h1');
 			var rookTo = document.getElementById('f1');
-			rookFrom.removeChild(rook);
-			rookTo.appendChild(rook);
+			$scope.movePiece(rook,rookTo);
 			
-			var notation = '0-0';
-			var move = {notation:notation, moved:moved, captured:captured, to:to, from:from, wksc:true};
-			$scope.moves.push(move);
+			//pushing move to stack
+			$scope.pushMove(king,null,'e1','g1','0-0',true);
 			
 			//change the turn
-			if($scope.isWhiteTurn)
-				$scope.setTurn('black');
-			else
-				$scope.setTurn('white');
+			$scope.switchTurn();
 			
 			//update new set of legal moves
 			$scope.getLegalMoves();
-			
-			console.log($scope.moves);
 		};
 		
-		$scope.undoWhiteKingsideCastleMove = function()
+		$scope.undoWhiteKingsideCastle = function()
 		{
-			console.log('UNDOING CASTLE');
+			//move king back
 			var king = document.getElementById('king-e1');
-			var kingFrom = document.getElementById('g1');
 			var kingTo = document.getElementById('e1');
-			kingFrom.removeChild(king);
-			kingTo.appendChild(king);
+			$scope.movePiece(king,kingTo);
 			
+			//move rook back
 			var rook = document.getElementById('rook-h1');
-			var rookFrom = document.getElementById('f1');
 			var rookTo = document.getElementById('h1');
-			rookFrom.removeChild(rook);
-			rookTo.appendChild(rook);
+			$scope.movePiece(rook,rookTo);
+		};
+		
+		$scope.makeWhiteQueensideCastle = function()
+		{
+			//move king
+			var king = document.getElementById('king-e1');
+			var kingTo = document.getElementById('c1');
+			$scope.movePiece(king,kingTo);
+			
+			//move rook
+			var rook = document.getElementById('rook-a1');
+			var rookTo = document.getElementById('d1');
+			$scope.movePiece(rook,rookTo);
+			
+			//pushing move to stack
+			$scope.pushMove(king,null,'e1','c1','0-0-0',false,true);
+			
+			//change the turn
+			$scope.switchTurn();
+			
+			//update new set of legal moves
+			$scope.getLegalMoves();
+		};
+		
+		$scope.undoWhiteQueensideCastle = function()
+		{
+			//move king back
+			var king = document.getElementById('king-e1');
+			var kingTo = document.getElementById('e1');
+			$scope.movePiece(king,kingTo);
+			
+			//move rook back
+			var rook = document.getElementById('rook-a1');
+			var rookTo = document.getElementById('a1');
+			$scope.movePiece(rook,rookTo);
 		};
 		
 		$scope.getLegalMoves = function()
