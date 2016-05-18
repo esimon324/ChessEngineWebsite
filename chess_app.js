@@ -1,10 +1,11 @@
 var chessApp = angular.module('chessApp', []).controller('chessAppController', 
-	function($scope,$http) {
+	function($scope,$http,$q) {
 		/*Scope Variables*/
 		$scope.moves = new Array();
 		$scope.isWhiteTurn;
 		$scope.legalMoves
 		$scope.rootURL = 'http://127.0.0.1:5000/'
+		$scope.promotionMove;
 		/*Scope Variables*/
 		
 		/*Scope Functions*/
@@ -29,7 +30,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 				$scope.isWhiteTurn = false;
 			}
 		};
-		
+	
 		$scope.switchTurn = function()
 		{
 			if($scope.isWhiteTurn)
@@ -48,6 +49,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			{
 				if($scope.moves.length > 0)
 				{
+					$scope.switchTurn();
 					var lastMove = $scope.moves.pop();
 					if(lastMove.wksc)
 						$scope.undoWhiteKingsideCastle();
@@ -57,18 +59,27 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 						$scope.undoBlackKingsideCastle();
 					else if(lastMove.bqsc)
 						$scope.undoBlackQueensideCastle();
+					else if($scope.isPromotion(lastMove.moved,lastMove.from,lastMove.to))
+					{
+						$scope.movePiece(lastMove.moved,document.getElementById(lastMove.from));
+						if(lastMove.captured != null)
+							document.getElementById(lastMove.to).appendChild(lastMove.captured);
+						if($scope.isWhiteTurn)
+							$scope.changePiece(lastMove.moved,'P');
+						else
+							$scope.changePiece(lastMove.moved,'p');
+					}
 					else
 					{
 						document.getElementById(lastMove.from).appendChild(lastMove.moved);
 						if(lastMove.captured != null)
 							document.getElementById(lastMove.to).appendChild(lastMove.captured);
 					}
-					$scope.switchTurn();
 				}
 				$scope.getLegalMoves();
 			}, function errorCallback(response) 
 			{
-				console.log('ERROR');
+				console.log('ERROR - from $scope.undo()');
 				console.log(response);
 			});
 		};
@@ -148,6 +159,22 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 		    var to = square.id;
 		    var from = piece.parentElement.id;
 			var uci = from + to;
+			if($scope.isPromotion(piece,from,to))
+			{
+				var notation = $scope.toNotation(piece,to,from,captured);
+				$scope.promotionMove = {
+							notation:notation, 
+							moved:piece, 
+							captured:captured, 
+							to:to, 
+							from:from, 
+							wksc:false, 
+							wqsc:false,
+							bksc:false,
+							bqsc:false
+						};
+				$scope.showPromotionModal();
+			}
 		    if($scope.isLegalMove(uci))
 		    {
 				var url = $scope.rootURL + 'move/' + uci
@@ -169,10 +196,133 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 						$scope.makeMove(square,piece,captured,from,to,false,false,false,false);
 				}, function errorCallback(response)
 				{
-					console.log('ERROR');
+					console.log('ERROR - $scope.handleDrop()');
 					console.log(response);
 				});
 			}
+		};
+		
+		$scope.isPromotion = function(piece,from,to)
+		{
+			var pieceType = $('#'+piece.id).attr('piece');
+			if(pieceType=='pawn')
+			{
+				if(from.charAt(1) == '7')
+				{
+					if(to.charAt(1) == '8')
+					{
+						return true;
+					}	
+				}
+				if(from.charAt(1) == '2')
+				{
+					if(to.charAt(1) == '1')
+					{
+						return true;
+					}
+				}	
+			}
+			return false;
+		};
+		
+		$scope.makePromotion = function(promoteType)
+		{
+			var move = $scope.promotionMove
+			move.notation = move.notation + "=" + promoteType.toUpperCase();
+			var uci = move.from + move.to + promoteType;
+			console.log('promote uci: ',uci);
+			var url = $scope.rootURL + 'move/' + uci
+			$http({
+				method: 'POST',
+				url: url
+			}).then(function successCallback(response) 
+			{	
+				$scope.movePiece(move.moved,document.getElementById(move.to));
+				$scope.moves.push(move);
+				if($scope.isWhiteTurn)
+					$scope.changePiece(move.moved,promoteType.toUpperCase());
+				else
+					$scope.changePiece(move.moved,promoteType);
+				console.log(move);
+				$scope.switchTurn();
+				$scope.getLegalMoves();
+				$scope.hidePromotionModal();
+			}, function errorCallback(response)
+			{
+				console.log('ERROR - from $scope.makePromotion()');
+				console.log(response);
+			});
+		};
+		
+		$scope.changePiece = function(piece,typeStr)
+		{
+			var path = piece.src;
+			var rm = ''; 
+			var add = '';
+			console.log(piece.classList);
+			if(typeStr=='P')
+			{
+				path = 'images/white_pawn.png';
+				rm = 'piece';
+				add = 'pawn';
+			}
+			if(typeStr=='N')
+			{	
+				path = 'images/white_knight.png';
+				rm = 'pawn';
+				add = 'piece';
+			}
+			if(typeStr=='B')
+			{
+				path = 'images/white_bishop.png';
+				rm = 'pawn';
+				add = 'piece';
+			}
+			if(typeStr=='R')
+			{
+				path = 'images/white_rook.png';
+				rm = 'pawn';
+				add = 'piece';
+			}
+			if(typeStr=='Q')
+			{
+				path = 'images/white_queen.png';
+				rm = 'pawn';
+				add = 'piece';
+			}
+			if(typeStr=='p')
+			{
+				path = 'images/black_pawn.png';
+				rm = 'piece';
+				add = 'pawn';
+			}
+			if(typeStr=='n')
+			{
+				path = 'images/black_knight.png';
+				rm = 'pawn';
+				add = 'piece';
+			}
+			if(typeStr=='b')
+			{
+				path = 'images/black_bishop.png';
+				rm = 'pawn';
+				add = 'piece';
+			}
+			if(typeStr=='r')
+			{
+				path = 'images/black_rook.png';
+				rm = 'pawn';
+				add = 'piece';
+			}
+			if(typeStr=='q')
+			{
+				path = 'images/black_queen.png';
+				rm = 'pawn';
+				add = 'piece';
+			}
+			piece.src = path;
+			piece.classList.remove(rm);
+			piece.classList.add(add);
 		};
 		
 		//handles all functionality for making a standard move
@@ -366,7 +516,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			}).then(function successCallback(response) {
 				$scope.legalMoves = response.data;
 			  }, function errorCallback(response) {
-				console.log('ERROR');
+				console.log('ERROR - from $scope.getLegalMoves()');
 				console.log(response);
 			  });
 		};
@@ -393,11 +543,20 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 				$scope.getLegalMoves();
 			}, function errorCallback(response) 
 			{
-				console.log('ERROR');
+				console.log('ERROR - from $scope.newGame()');
 				console.log(response);
 			});
 		};
 		
+		$scope.showPromotionModal = function()
+		{
+			$('#promotionModal').modal('show');
+		};
+		
+		$scope.hidePromotionModal = function()
+		{
+			$('#promotionModal').modal('hide');
+		};
 		/*Scope Functions*/
 		
 		$scope.init()
