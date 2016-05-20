@@ -1,3 +1,12 @@
+/*TODO
+ * - change make move to a GET http call and return object of special moves
+ *		{wksc:boolean,wqsc:boolean,bksc:boolean,bqsc:boolean,enPassant:String{('None' or '*en passant square*')}
+ * - implement en passant functionality
+ *		- make notation work
+ * - implement end of game detection: no legal moves, x3 repeated position, no legal moves, checkmate
+ * - create new game without having to refresh the page
+ * - add AI to play against
+ */ 
 var chessApp = angular.module('chessApp', []).controller('chessAppController', 
 	function($scope,$http,$q) {
 		/*Scope Variables*/
@@ -6,6 +15,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 		$scope.legalMoves
 		$scope.rootURL = 'http://127.0.0.1:5000/'
 		$scope.promotionMove;
+		$scope.files = {'a':1,'b':2,'c':3,'d':4,'e':5,'f':6,'g':7,'h':8,1:'a',2:'b',3:'c',4:'d',5:'e',6:'f',7:'g',8:'h'};
 		/*Scope Variables*/
 		
 		/*Scope Functions*/
@@ -59,6 +69,11 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 						$scope.undoBlackKingsideCastle();
 					else if(lastMove.bqsc)
 						$scope.undoBlackQueensideCastle();
+					else if(lastMove.ep)
+					{
+						lastMove.epCaptureSquare.appendChild(lastMove.captured);
+						$scope.movePiece(lastMove.moved,document.getElementById(lastMove.from));
+					}
 					else if($scope.isPromotion(lastMove.moved,lastMove.from,lastMove.to))
 					{
 						$scope.movePiece(lastMove.moved,document.getElementById(lastMove.from));
@@ -112,6 +127,23 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 				return 'g';
 			else
 				return 'h';
+		};
+		
+		$scope.uciToNumber = function(uci)
+		{
+			var file = uci.charAt(0);
+			var rank = uci.charAt(1);
+			file = $scope.files[file];
+			rank = parseInt(rank);
+			return ((8*(rank-1))+(file-1));
+		};
+		
+		$scope.numberToUci = function(n)
+		{
+			var rank = Math.ceil((n+1) / 8);
+			var file = (n % 8)+1;
+			file = $scope.files[file]
+			return file.toString() + rank.toString();
 		};
 
 		//takes the piece and the square and forms the correct chess notation for the move
@@ -192,8 +224,10 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 						$scope.makeBlackKingsideCastle();
 					else if($scope.legalMoves.queenside && uci == 'e8c8')
 						$scope.makeBlackQueensideCastle();
+					else if(piece.getAttribute('piece-type') == 'pawn' && $scope.uciToNumber(to) == $scope.legalMoves.ep_square)
+						$scope.makeEnPassant(square,piece,captured,from,to,false,false,false,false);
 					else
-						$scope.makeMove(square,piece,captured,from,to,false,false,false,false);
+						$scope.makeStandardMove(square,piece,captured,from,to);
 				}, function errorCallback(response)
 				{
 					console.log('ERROR - $scope.handleDrop()');
@@ -202,9 +236,51 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			}
 		};
 		
+		$scope.makeEnPassant = function(square,moved,captured,from,to,wksc,wqsc,bksc,bqsc)
+		{
+			//determine square of captured pawn
+			var epCaptureSquare;
+			if($scope.isWhiteTurn)
+			{
+				console.log($scope.legalMoves.ep_square - 8);
+				epCaptureSquare = document.getElementById($scope.numberToUci($scope.legalMoves.ep_square-8));
+			}
+			else
+			{
+				console.log($scope.legalMoves.ep_square + 8);
+				epCaptureSquare = document.getElementById($scope.numberToUci($scope.legalMoves.ep_square+8));
+			}
+			
+			//make the piece moves
+			$scope.movePiece(moved,document.getElementById(to));
+			
+			//set captured and remove piece from square
+			captured = epCaptureSquare.children[0];
+			epCaptureSquare.removeChild(captured);
+			
+			var notation = $scope.toNotation(moved,to,from,captured);
+			//push move
+			var move = {
+							notation:notation, 
+							moved:moved, 
+							captured:captured, 
+							to:to, 
+							from:from,
+							ep:true,
+							epCaptureSquare:epCaptureSquare
+						};
+			$scope.moves.push(move);
+			
+			//switch turn
+			$scope.switchTurn();
+			
+			//get new legal moves
+			$scope.getLegalMoves();
+		};
+				
 		$scope.isPromotion = function(piece,from,to)
 		{
-			var pieceType = $('#'+piece.id).attr('piece');
+			var pieceType = $('#'+piece.id).attr('piece-type');
 			if(pieceType=='pawn')
 			{
 				if(from.charAt(1) == '7')
@@ -326,14 +402,14 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 		};
 		
 		//handles all functionality for making a standard move
-		$scope.makeMove = function(square,moved,captured,from,to,wksc,wqsc,bksc,bqsc)
+		$scope.makeStandardMove = function(square,moved,captured,from,to,wksc,wqsc,bksc,bqsc)
 		{
 			//move the pieces
 			$scope.movePiece(moved,square);
 			
 			//push move onto the stack
 			var notation = $scope.toNotation(moved,to,from,captured);
-			$scope.pushMove(moved,captured,from,to,notation,wksc,wqsc,bksc,bqsc);
+			$scope.pushMove(notation,moved,captured,to,from);
 			
 			//change the turn
 			$scope.switchTurn();
@@ -351,19 +427,17 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			to.appendChild(piece);
 		};
 		
-		$scope.pushMove = function(moved,captured,from,to,notation,wksc,wqsc,bksc,bqsc)
+		//TODO: refactor to only handle standard moves
+		$scope.pushMove = function(notation,moved,captured,to,from)
 		{
 			var move = {
 							notation:notation, 
 							moved:moved, 
 							captured:captured, 
 							to:to, 
-							from:from, 
-							wksc:wksc, 
-							wqsc:wqsc,
-							bksc:bksc,
-							bqsc:bqsc
+							from:from
 						};
+			console.log(move);
 			$scope.moves.push(move);
 		};
 				
@@ -380,7 +454,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			$scope.movePiece(rook,rookTo);
 			
 			//pushing move to stack
-			$scope.pushMove(king,null,'e1','g1','0-0',true,false,false,false);
+			$scope.pushWhiteKingsideCastle();
 			
 			//change the turn
 			$scope.switchTurn();
@@ -388,6 +462,19 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			//update new set of legal moves
 			$scope.getLegalMoves();
 		};
+			$scope.pushWhiteKingsideCastle = function()
+			{
+				var moved = document.getElementById('king-e1');
+				var move = {
+								notation:'0-0', 
+								moved:moved, 
+								captured:undefined, 
+								to:'g1', 
+								from:'e1',
+								wksc:true
+							};
+				$scope.moves.push(move);
+			};
 		
 		$scope.undoWhiteKingsideCastle = function()
 		{
@@ -415,7 +502,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			$scope.movePiece(rook,rookTo);
 			
 			//pushing move to stack
-			$scope.pushMove(king,null,'e1','c1','0-0-0',false,true,false,false);
+			$scope.pushWhiteQueensideCastle();
 			
 			//change the turn
 			$scope.switchTurn();
@@ -423,6 +510,19 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			//update new set of legal moves
 			$scope.getLegalMoves();
 		};
+			$scope.pushWhiteQueensideCastle = function()
+			{
+				var moved = document.getElementById('king-e1');
+				var move = {
+								notation:'0-0-0', 
+								moved:moved, 
+								captured:undefined, 
+								to:'g1', 
+								from:'c1',
+								wqsc:true
+							};
+				$scope.moves.push(move);
+			};
 		
 		$scope.undoWhiteQueensideCastle = function()
 		{
@@ -450,7 +550,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			$scope.movePiece(rook,rookTo);
 			
 			//pushing move to stack
-			$scope.pushMove(king,null,'e8','g8','0-0',false,false,true,false);
+			$scope.pushBlackKingsideCastle();
 			
 			//change the turn
 			$scope.switchTurn();
@@ -458,6 +558,19 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			//update new set of legal moves
 			$scope.getLegalMoves();
 		};
+			$scope.pushBlackKingsideCastle = function()
+			{
+				var moved = document.getElementById('king-e8');
+				var move = {
+								notation:'0-0', 
+								moved:moved, 
+								captured:undefined, 
+								to:'g8', 
+								from:'e8',
+								bksc:true
+							};
+				$scope.moves.push(move);
+			};
 		
 		$scope.undoBlackKingsideCastle = function()
 		{
@@ -485,7 +598,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			$scope.movePiece(rook,rookTo);
 			
 			//pushing move to stack
-			$scope.pushMove(king,null,'d8','c8','0-0-0',false,false,false,true);
+			$scope.pushBlackQueensideCastle();
 			
 			//change the turn
 			$scope.switchTurn();
@@ -493,6 +606,19 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			//update new set of legal moves
 			$scope.getLegalMoves();
 		};
+			$scope.pushBlackQueensideCastle = function()
+			{
+				var moved = document.getElementById('king-e8');
+				var move = {
+								notation:'0-0-0', 
+								moved:moved, 
+								captured:undefined, 
+								to:'g8', 
+								from:'c8',
+								bqsc:true
+							};
+				$scope.moves.push(move);
+			};
 		
 		$scope.undoBlackQueensideCastle = function()
 		{
@@ -564,7 +690,6 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 ).directive('moveable', 
 	function($document){
   		return function(scope, element, attr){
-	    	var startX = 0, startY = 0, x = 0, y = 0;
 	    	element.css({
 			    position: 'relative',
 			   	cursor: 'pointer',

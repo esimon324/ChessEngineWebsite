@@ -13,25 +13,26 @@
 	<body ng-app="chessApp">
 		<div id="main" ng-controller="chessAppController">
 			<h1>Chess</h1>
+			<h2>{{numberToUci(24)}}</h2>
 			<div class="col-md-offset-2 col-md-8 col-xs-12">
 				<div class="board" style="height:400px;">
 					<button ng-click="undo()">Undo</button>
 					<div ng-repeat="i in [8,7,6,5,4,3,2,1]" style="border:2px solid red; position:relative; display:table-row;">
 						<span class="rank-number">{{i}}</span>
 						<div ng-repeat="j in [8,7,6,5,4,3,2,1]" ng-class="{'dark':isEven(i+j), 'light':!isEven(j+i), 'endl':isLastCol(j)}" 
-							class="square" id="{{toLetter(j)+i}}" droppable>
-							<img ng-if="i==2" id="{{'pawn-'+toLetter(j)+i}}" piece="pawn" color="white" class="pawn" src="images/white_pawn.png" moveable/>
-							<img ng-if="i==7" id="{{'pawn-'+toLetter(j)+i}}" piece="pawn" color="black" class="pawn" src="images/black_pawn.png" draggable="false" moveable/>
-							<img ng-if="i==1&&(j==3 || j==6)" id="{{'bishop-'+toLetter(j)+i}}" piece="bishop" color="white" class="piece" src="images/white_bishop.png" moveable/>
-							<img ng-if="i==8&&(j==3 || j==6)" id="{{'bishop-'+toLetter(j)+i}}" piece="bishop" color="black" class="piece" src="images/black_bishop.png" draggable="false" moveable/>
-							<img ng-if="i==1&&(j==2 || j==7)" id="{{'knight-'+toLetter(j)+i}}" piece="knight" color="white" class="piece" src="images/white_knight.png" moveable/>
-							<img ng-if="i==8&&(j==2 || j==7)" id="{{'knight-'+toLetter(j)+i}}" piece="knight" color="black" class="piece" src="images/black_knight.png" draggable="false" moveable/>
-							<img ng-if="i==1&&(j==1 || j==8)" id="{{'rook-'+toLetter(j)+i}}" piece="rook" color="white" class="piece" src="images/white_rook.png" moveable/>
-							<img ng-if="i==8&&(j==1 || j==8)" id="{{'rook-'+toLetter(j)+i}}" piece="rook" color="black" class="piece" src="images/black_rook.png" draggable="false" moveable/>
-							<img ng-if="i==1&&j==4" id="{{'queen-'+toLetter(j)+i}}" piece="queen" color="white" class="piece" src="images/white_queen.png" moveable/>
-							<img ng-if="i==8&&j==4" id="{{'queen-'+toLetter(j)+i}}" piece="queen" color="black" class="piece" src="images/black_queen.png" draggable="false" moveable/>
-							<img ng-if="i==1&&j==5" id="{{'king-'+toLetter(j)+i}}" piece="king" color="white" class="piece" src="images/white_king.png" moveable/>
-							<img ng-if="i==8&&j==5" id="{{'king-'+toLetter(j)+i}}" piece="king" color="black" class="piece" src="images/black_king.png" draggable="false" moveable/>
+							class="square" id="{{toLetter(j)+i}}" number="{{(8*i)-(9-j)}}" i="{{i}}" j="{{j}}" droppable>
+							<img ng-if="i==2" id="{{'pawn-'+toLetter(j)+i}}" piece-type="pawn" color="white" class="pawn" src="images/white_pawn.png" moveable/>
+							<img ng-if="i==7" id="{{'pawn-'+toLetter(j)+i}}" piece-type="pawn" color="black" class="pawn" src="images/black_pawn.png" draggable="false" moveable/>
+							<img ng-if="i==1&&(j==3 || j==6)" id="{{'bishop-'+toLetter(j)+i}}" piece-type="bishop" color="white" class="piece" src="images/white_bishop.png" moveable/>
+							<img ng-if="i==8&&(j==3 || j==6)" id="{{'bishop-'+toLetter(j)+i}}" piece-type="bishop" color="black" class="piece" src="images/black_bishop.png" draggable="false" moveable/>
+							<img ng-if="i==1&&(j==2 || j==7)" id="{{'knight-'+toLetter(j)+i}}" piece-type="knight" color="white" class="piece" src="images/white_knight.png" moveable/>
+							<img ng-if="i==8&&(j==2 || j==7)" id="{{'knight-'+toLetter(j)+i}}" piece-type="knight" color="black" class="piece" src="images/black_knight.png" draggable="false" moveable/>
+							<img ng-if="i==1&&(j==1 || j==8)" id="{{'rook-'+toLetter(j)+i}}" piece-type="rook" color="white" class="piece" src="images/white_rook.png" moveable/>
+							<img ng-if="i==8&&(j==1 || j==8)" id="{{'rook-'+toLetter(j)+i}}" piece-type="rook" color="black" class="piece" src="images/black_rook.png" draggable="false" moveable/>
+							<img ng-if="i==1&&j==4" id="{{'queen-'+toLetter(j)+i}}" piece-type="queen" color="white" class="piece" src="images/white_queen.png" moveable/>
+							<img ng-if="i==8&&j==4" id="{{'queen-'+toLetter(j)+i}}" piece-type="queen" color="black" class="piece" src="images/black_queen.png" draggable="false" moveable/>
+							<img ng-if="i==1&&j==5" id="{{'king-'+toLetter(j)+i}}" piece-type="king" color="white" class="piece" src="images/white_king.png" moveable/>
+							<img ng-if="i==8&&j==5" id="{{'king-'+toLetter(j)+i}}" piece-type="king" color="black" class="piece" src="images/black_king.png" draggable="false" moveable/>
 						</div>
 					</div>
 					<div>
@@ -57,9 +58,9 @@
 				</table>
 			</div>
 			<div>
-				<!-- <ol>
+				<ol>
 					<li ng-repeat="lm in legalMoves track by $index">{{lm}}</li>
-				</ol> -->
+				</ol>
 			</div>
 			<!-- Modal -->
 			<div class="modal fade" id="promotionModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
