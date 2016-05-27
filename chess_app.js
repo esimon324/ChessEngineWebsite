@@ -211,23 +211,50 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 		    {
 				var url = $scope.rootURL + 'move/' + uci
 				$http({
-					method: 'POST',
+					method: 'GET',
 					url: url
 				}).then(function successCallback(response) 
-				{						
-					/*handle castling*/
-					if($scope.legalMoves.kingside && uci == 'e1g1')
-						$scope.makeWhiteKingsideCastle();
-					else if($scope.legalMoves.queenside && uci == 'e1c1')
-						$scope.makeWhiteQueensideCastle();
-					else if($scope.legalMoves.kingside && uci == 'e8g8')
-						$scope.makeBlackKingsideCastle();
-					else if($scope.legalMoves.queenside && uci == 'e8c8')
-						$scope.makeBlackQueensideCastle();
-					else if(piece.getAttribute('piece-type') == 'pawn' && $scope.uciToNumber(to) == $scope.legalMoves.ep_square)
-						$scope.makeEnPassant(square,piece,captured,from,to,false,false,false,false);
+				{
+					console.log(response.data);
+					if(response.data.kingside)
+					{
+						if($scope.isWhiteTurn)
+							$scope.makeWhiteKingsideCastle();
+						else
+							$scope.makeBlackKingsideCastle();
+					}
+					else if(response.data.queenside)
+					{
+						if($scope.isWhiteTurn)
+							$scope.makeWhiteQueensideCastle();
+						else
+							$scope.makeBlackQueensideCastle();
+					}
+					else if(response.data.ep)
+					{
+						$scope.makeEnPassant(square,piece,captured,from,to,response.data.epSquare);
+					}
 					else
+					{
 						$scope.makeStandardMove(square,piece,captured,from,to);
+					}
+					
+					if(response.data.checkmate)
+					{
+						alert('checkmate');
+					}
+					else if(response.data.stalemate)
+					{
+						alert('stalemate');
+					}
+					else if(response.data.threefoldRepitition)
+					{
+						alert('draw threefold repitition');
+					}
+					else if(response.data.insufficientMaterial)
+					{
+						alert('insufficient material');
+					}
 				}, function errorCallback(response)
 				{
 					console.log('ERROR - $scope.handleDrop()');
@@ -236,19 +263,19 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			}
 		};
 		
-		$scope.makeEnPassant = function(square,moved,captured,from,to,wksc,wqsc,bksc,bqsc)
+		$scope.makeEnPassant = function(square,moved,captured,from,to,epSquare)
 		{
 			//determine square of captured pawn
 			var epCaptureSquare;
 			if($scope.isWhiteTurn)
 			{
 				console.log($scope.legalMoves.ep_square - 8);
-				epCaptureSquare = document.getElementById($scope.numberToUci($scope.legalMoves.ep_square-8));
+				epCaptureSquare = document.getElementById($scope.numberToUci(epSquare-8));
 			}
 			else
 			{
 				console.log($scope.legalMoves.ep_square + 8);
-				epCaptureSquare = document.getElementById($scope.numberToUci($scope.legalMoves.ep_square+8));
+				epCaptureSquare = document.getElementById($scope.numberToUci(epSquare+8));
 			}
 			
 			//make the piece moves
@@ -259,6 +286,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			epCaptureSquare.removeChild(captured);
 			
 			var notation = $scope.toNotation(moved,to,from,captured);
+			notation = notation+'e.p.';
 			//push move
 			var move = {
 							notation:notation, 
@@ -309,7 +337,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			console.log('promote uci: ',uci);
 			var url = $scope.rootURL + 'move/' + uci
 			$http({
-				method: 'POST',
+				method: 'GET',
 				url: url
 			}).then(function successCallback(response) 
 			{	
@@ -437,7 +465,6 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 							to:to, 
 							from:from
 						};
-			console.log(move);
 			$scope.moves.push(move);
 		};
 				
