@@ -8,23 +8,18 @@
  * - add AI to play against
  */ 
 var chessApp = angular.module('chessApp', []).controller('chessAppController', 
-	function($scope,$http,$q) {
+	function($scope,$http,$timeout,$compile) {
 		/*Scope Variables*/
 		$scope.moves = new Array();
-		$scope.isWhiteTurn;
+		$scope.isWhiteTurn = true;
 		$scope.legalMoves
 		$scope.rootURL = 'http://127.0.0.1:5000/'
 		$scope.promotionMove;
 		$scope.files = {'a':1,'b':2,'c':3,'d':4,'e':5,'f':6,'g':7,'h':8,1:'a',2:'b',3:'c',4:'d',5:'e',6:'f',7:'g',8:'h'};
+		$scope.originalBoard;
 		/*Scope Variables*/
 		
 		/*Scope Functions*/
-		$scope.init = function()
-		{
-			$scope.newGame();
-			$scope.setTurn('white');
-		};
-		
 		$scope.setTurn = function(color)
 		{
 			if(color=='white')
@@ -51,13 +46,13 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 		
 		$scope.undo = function()
 		{
-			var url = $scope.rootURL + 'undo';
-			$http({
-				method: 'POST',
-				url: url
-			}).then(function successCallback(response)
+			if($scope.moves.length > 0)
 			{
-				if($scope.moves.length > 0)
+				var url = $scope.rootURL + 'undo';
+				$http({
+					method: 'POST',
+					url: url
+				}).then(function successCallback(response)
 				{
 					$scope.switchTurn();
 					var lastMove = $scope.moves.pop();
@@ -90,13 +85,13 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 						if(lastMove.captured != null)
 							document.getElementById(lastMove.to).appendChild(lastMove.captured);
 					}
-				}
-				$scope.getLegalMoves();
-			}, function errorCallback(response) 
-			{
-				console.log('ERROR - from $scope.undo()');
-				console.log(response);
-			});
+					$scope.getLegalMoves();
+				}, function errorCallback(response) 
+				{
+					console.log('ERROR - from $scope.undo()');
+					console.log(response);
+				});
+			}
 		};
 		
 		$scope.isEven = function(n)
@@ -111,22 +106,7 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 		
 		$scope.toLetter = function(n)
 		{
-			if(n == 1)
-				return 'a';
-			else if(n == 2)
-				return 'b';
-			else if(n == 3)
-				return 'c';
-			else if(n == 4)
-				return 'd';
-			else if(n == 5)
-				return 'e';
-			else if(n == 6)
-				return 'f';
-			else if(n == 7)
-				return 'g';
-			else
-				return 'h';
+			return $scope.files[n];
 		};
 		
 		$scope.uciToNumber = function(uci)
@@ -200,10 +180,6 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 							captured:captured, 
 							to:to, 
 							from:from, 
-							wksc:false, 
-							wqsc:false,
-							bksc:false,
-							bqsc:false
 						};
 				$scope.showPromotionModal();
 			}
@@ -215,7 +191,6 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 					url: url
 				}).then(function successCallback(response) 
 				{
-					console.log(response.data);
 					if(response.data.kingside)
 					{
 						if($scope.isWhiteTurn)
@@ -269,12 +244,10 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			var epCaptureSquare;
 			if($scope.isWhiteTurn)
 			{
-				console.log($scope.legalMoves.ep_square - 8);
 				epCaptureSquare = document.getElementById($scope.numberToUci(epSquare-8));
 			}
 			else
 			{
-				console.log($scope.legalMoves.ep_square + 8);
 				epCaptureSquare = document.getElementById($scope.numberToUci(epSquare+8));
 			}
 			
@@ -331,11 +304,10 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 		
 		$scope.makePromotion = function(promoteType)
 		{
-			var move = $scope.promotionMove
+			var move = $scope.promotionMove;
 			move.notation = move.notation + "=" + promoteType.toUpperCase();
 			var uci = move.from + move.to + promoteType;
-			console.log('promote uci: ',uci);
-			var url = $scope.rootURL + 'move/' + uci
+			var url = $scope.rootURL + 'move/' + uci;
 			$http({
 				method: 'GET',
 				url: url
@@ -347,7 +319,6 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 					$scope.changePiece(move.moved,promoteType.toUpperCase());
 				else
 					$scope.changePiece(move.moved,promoteType);
-				console.log(move);
 				$scope.switchTurn();
 				$scope.getLegalMoves();
 				$scope.hidePromotionModal();
@@ -363,7 +334,6 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 			var path = piece.src;
 			var rm = ''; 
 			var add = '';
-			console.log(piece.classList);
 			if(typeStr=='P')
 			{
 				path = 'images/white_pawn.png';
@@ -692,13 +662,41 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 				url: url
 			}).then(function successCallback(response)
 			{
-				console.log('New game created');
+				$scope.resetBoard();
+				$scope.setTurn('white');
 				$scope.getLegalMoves();
 			}, function errorCallback(response) 
 			{
 				console.log('ERROR - from $scope.newGame()');
 				console.log(response);
 			});
+		};
+		
+		$scope.init = function()
+		{
+			var url = $scope.rootURL + 'init'
+			$http({
+				method: 'POST',
+				url: url
+			}).then(function successCallback(response)
+			{
+				$scope.getLegalMoves();
+			}, function errorCallback(response) 
+			{
+				console.log('ERROR - from $scope.newGame()');
+				console.log(response);
+			});
+		};
+				
+		$scope.setInitBoard = function()
+		{
+			$scope.originalBoard = document.getElementById('board');
+		};
+		
+		$scope.print = function()
+		{
+			//console.log(document.getElementById('board'));
+			//console.log(document.getElementById('board'));
 		};
 		
 		$scope.showPromotionModal = function()
@@ -709,6 +707,31 @@ var chessApp = angular.module('chessApp', []).controller('chessAppController',
 		$scope.hidePromotionModal = function()
 		{
 			$('#promotionModal').modal('hide');
+		};
+		
+		$scope.resetBoard = function()
+		{
+			// console.log($scope.originalBoard);
+			// var board = angular.element(document.getElementById('board'));
+			// var template = $scope.originalBoard.innerHTML;
+			// var link = $compile(template);
+			// var content = link($scope);
+			// board.append(content);
+			while($scope.moves.length > 0)
+			{
+				var lastMove = $scope.moves.pop();
+				document.getElementById(lastMove.from).appendChild(lastMove.moved);
+				if(lastMove.captured != null)
+					document.getElementById(lastMove.to).appendChild(lastMove.captured);
+			}
+		};
+		
+		$scope.showTurn = function()
+		{
+			if($scope.isWhiteTurn)
+				return "White's Turn";
+			else
+				return "Black's Turn";
 		};
 		/*Scope Functions*/
 		

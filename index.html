@@ -13,8 +13,11 @@
 	<body ng-app="chessApp">
 		<div id="main" ng-controller="chessAppController">
 			<h1>Chess</h1>
-			<div class="col-md-offset-2 col-md-8 col-xs-12">
-				<div class="board" style="height:400px;">
+			<h1>{{showTurn()}}</h1>
+			<button ng-click="newGame()">New Game</button>
+			<button ng-click="print()">print</button>
+			<div id="board_container" class="col-md-offset-2 col-md-8 col-xs-12">
+				<div id="board" ng-init="setInitBoard()" ng-hide="settingUp" class="board" style="height:400px;">
 					<button ng-click="undo()">Undo</button>
 					<div ng-repeat="i in [8,7,6,5,4,3,2,1]" style="border:2px solid red; position:relative; display:table-row;">
 						<span class="rank-number">{{i}}</span>
